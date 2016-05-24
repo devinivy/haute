@@ -281,6 +281,62 @@ describe('Haute', () => {
         });
     });
 
+    it('calls method without optional, omitted arguments.', (done) => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (sigTwo) {
+
+                calledWith.sigTwo = sigTwo;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'signature-opt',
+            signature: ['[sigOne]', 'sigTwo']
+        }];
+
+        Haute(dirname, manifest)(instance, {}, (err) => {
+
+            expect(err).to.not.exist();
+            expect(calledWith.sigTwo).to.equal('valueTwo');
+            expect(calledWith.length).to.equal(1);
+            done();
+        });
+    });
+
+    it('calls method with optional but present arguments.', (done) => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (sigOne, sigTwo) {
+
+                calledWith.sigOne = sigOne;
+                calledWith.sigTwo = sigTwo;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'signature',
+            signature: ['[sigOne]', 'sigTwo']
+        }];
+
+        Haute(dirname, manifest)(instance, {}, (err) => {
+
+            expect(err).to.not.exist();
+            expect(calledWith.sigOne).to.equal('valueOne');
+            expect(calledWith.sigTwo).to.equal('valueTwo');
+            expect(calledWith.length).to.equal(2);
+            done();
+        });
+    });
+
     it('calls with argument from a json file.', (done) => {
 
         const calledWith = {};
