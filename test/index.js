@@ -46,7 +46,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ file: 'value' });
+            expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.length).to.equal(1);
             done();
         });
@@ -93,7 +93,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.deep.equal([
+            expect(calledWith).to.equal([
                 { arg: { file: 'value' }, length: 1 },
                 { arg: { file: 'value' }, length: 1 },
                 { arg: { file: 'value' }, length: 1 }
@@ -148,7 +148,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ file: 'value' });
+            expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.length).to.equal(1);
             expect(instance.deep.context).to.equal(true);
             done();
@@ -176,7 +176,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ file: 'value' });
+            expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.length).to.equal(1);
             done();
         });
@@ -209,7 +209,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ file: 'value' });
+            expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.next).to.be.a.function();
             expect(calledWith.waited).to.equal(true);
             expect(calledWith.length).to.equal(2);
@@ -244,7 +244,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err.message).to.equal(':)');
-            expect(calledWith.arg).to.deep.equal({ file: 'value' });
+            expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.next).to.be.a.function();
             expect(calledWith.waited).to.equal(true);
             expect(calledWith.length).to.equal(2);
@@ -301,7 +301,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ json: 'value' });
+            expect(calledWith.arg).to.equal({ json: 'value' });
             expect(calledWith.length).to.equal(1);
             done();
         });
@@ -327,7 +327,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.deep.equal([
+            expect(calledWith).to.equal([
                 { arg: { listOne: 'valueOne' }, length: 1 },
                 { arg: { listTwo: 'valueTwo' }, length: 1 }
             ]);
@@ -357,7 +357,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, options, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.deep.equal([
+            expect(calledWith).to.equal([
                 { arg: { funcListOne: 'valueOne' }, length: 1 },
                 { arg: { plainListTwo: 'valueTwo' }, length: 1 }
             ]);
@@ -392,7 +392,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.deep.equal([
+            expect(calledWith).to.equal([
                 { arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 },
                 { arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 }
             ]);
@@ -420,7 +420,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ dirIndex: 'value' });
+            expect(calledWith.arg).to.equal({ dirIndex: 'value' });
             expect(calledWith.length).to.equal(1);
             done();
         });
@@ -446,7 +446,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ deeper: 'value' });
+            expect(calledWith.arg).to.equal({ deeper: 'value' });
             expect(calledWith.length).to.equal(1);
             done();
         });
@@ -498,7 +498,7 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, options, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith.arg).to.deep.equal({ func: 'value' });
+            expect(calledWith.arg).to.equal({ func: 'value' });
             expect(calledWith.length).to.equal(1);
             expect(instance.insideFunc).to.equal('instance');
             expect(options.insideFunc).to.equal('options');
