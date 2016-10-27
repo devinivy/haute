@@ -562,4 +562,37 @@ describe('Haute', () => {
         });
     });
 
+    it('requires a file with a syntax error.', (done) => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.arg = arg;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'syntax'
+        }];
+
+        const thrower = function () {
+
+            Haute(dirname, manifest)(instance, options, (ignoreErr) => {
+
+                done(new Error('Should have had an error'));
+            });
+        };
+
+        expect(
+            thrower
+        ).to.throw();
+        done();
+    });
+
 });
