@@ -4,6 +4,7 @@
 
 const Lab = require('lab');
 const Code = require('code');
+const Path = require('path');
 const Haute = require('..');
 
 // Test shortcuts
@@ -243,7 +244,7 @@ describe('Haute', () => {
 
         Haute(dirname, manifest)(instance, {}, (err) => {
 
-            expect(err.message).to.equal(':)');
+            expect(err.message).to.endWith(':)');
             expect(calledWith.arg).to.equal({ file: 'value' });
             expect(calledWith.next).to.be.a.function();
             expect(calledWith.waited).to.equal(true);
@@ -584,5 +585,122 @@ describe('Haute', () => {
         }).to.throw(/unexpected token/i);
 
         done();
+    });
+
+    it('tags sync runtime errors with calling info.', (done) => {
+
+        const instance = {
+            callThis: () => {
+
+                throw new Error('Runtime oopsie!');
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'file'
+        }];
+
+        const haute = Haute(dirname, manifest);
+
+        expect(() => {
+
+            haute(instance, (ignoreErr) => {
+
+                done(new Error('Should not make it here'));
+            });
+        }).to.throw(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
+
+        done();
+    });
+
+    it('tags async runtime errors with calling info.', (done) => {
+
+        const instance = {
+            callThis: (arg, cb) => cb(new Error('Runtime oopsie!'))
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'file',
+            async: true
+        }];
+
+        Haute(dirname, manifest)(instance, (err) => {
+
+            expect(err).to.exist();
+            expect(err.message).to.equal(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
+
+            done();
+        });
+    });
+
+    it('tags runtime errors without existing messages.', (done) => {
+
+        const instance = {
+            callThis: (arg, cb) => cb(new Error())
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'file',
+            async: true
+        }];
+
+        Haute(dirname, manifest)(instance, (err) => {
+
+            expect(err).to.exist();
+            expect(err.message).to.equal(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}`);
+
+            done();
+        });
+    });
+
+    it('tags runtime errors with correct path in single list file.', (done) => {
+
+        const instance = {
+            callThis: (arg, cb) => cb(new Error())
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'list-as-file',
+            list: true,
+            async: true
+        }];
+
+        Haute(dirname, manifest)(instance, (err) => {
+
+            expect(err).to.exist();
+            expect(err.message).to.startWith(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-file.js')}`);
+
+            done();
+        });
+    });
+
+    it('tags runtime errors with correct path in listed directory files.', (done) => {
+
+        const instance = {
+            callThis: (filename, cb) => {
+
+                return cb((filename === 'plain-item') ? new Error() : null);
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'list-as-dir-files',
+            list: true,
+            async: true,
+            useFilename: (filename) => filename
+        }];
+
+        Haute(dirname, manifest)(instance, (err) => {
+
+            expect(err).to.exist();
+            expect(err.message).to.startWith(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-dir-files', 'plain-item.js')}`);
+
+            done();
+        });
     });
 });
