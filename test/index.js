@@ -581,7 +581,7 @@ describe('Haute', () => {
 
                 done(new Error('Should not make it here'));
             });
-        }).to.throw(/unexpected token/);
+        }).to.throw(/unexpected token/i);
 
         done();
     });
