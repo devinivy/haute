@@ -562,37 +562,27 @@ describe('Haute', () => {
         });
     });
 
-    it('requires a file with a syntax error.', (done) => {
-
-        const calledWith = {};
+    it('throws hard when encountering a syntax error.', (done) => {
 
         const instance = {
-            callThis: function (arg) {
-
-                calledWith.arg = arg;
-                calledWith.length = arguments.length;
-            }
+            callThis: () => false
         };
-
-        const options = {};
 
         const manifest = [{
             method: 'callThis',
-            place: 'syntax'
+            place: 'bad-syntax'
         }];
 
-        const thrower = function () {
+        const haute = Haute(dirname, manifest);
 
-            Haute(dirname, manifest)(instance, options, (ignoreErr) => {
+        expect(() => {
 
-                done(new Error('Should have had an error'));
+            haute(instance, (ignoreErr) => {
+
+                done(new Error('Should not make it here'));
             });
-        };
+        }).to.throw(/unexpected token/);
 
-        expect(
-            thrower
-        ).to.throw();
         done();
     });
-
 });

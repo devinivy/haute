@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "lab -a code -t 100 -L test/index.js",
-    "coveralls": "lab -r lcov | coveralls test/index.js"
+    "coveralls": "lab -r lcov test/index.js | coveralls"
   },
   "repository": {
     "type": "git",
@@ -27,13 +27,13 @@
   },
   "homepage": "https://github.com/devinivy/haute#readme",
   "dependencies": {
-    "hoek": "3.x.x",
+    "hoek": "4.x.x",
     "items": "2.x.x",
     "require-dir": "0.3.x"
   },
   "devDependencies": {
-    "code": "3.x.x",
+    "code": "4.x.x",
     "coveralls": "2.x.x",
-    "lab": "10.x.x"
+    "lab": "11.x.x"
   }
 }
