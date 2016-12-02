@@ -563,6 +563,35 @@ describe('Haute', () => {
         });
     });
 
+    it('calls with evaluated es6 class argument in non-list.', (done) => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.arg = arg;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'es6-class'
+        }];
+
+        Haute(dirname, manifest)(instance, options, (err) => {
+
+            expect(err).to.not.exist();
+            const es6ClassInstance = new calledWith.arg();
+            expect(es6ClassInstance.customFunc()).to.equal('Hello!');
+            expect(calledWith.length).to.equal(1);
+            done();
+        });
+    });
+
     it('throws hard when encountering a syntax error.', (done) => {
 
         const instance = {
