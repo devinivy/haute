@@ -399,7 +399,14 @@ describe('Haute', () => {
         const instance = {
             callThis: function (arg) {
 
-                calledWith.push({ arg, length: arguments.length });
+                if (typeof arg === 'function' && /^class\s/.test(arg.toString())) {
+                    const es6ClassFunc = new arg().customFuncInDir();
+                    calledWith.push({ es6ClassFunc, length: arguments.length });
+                }
+                else {
+                    calledWith.push({ arg, length: arguments.length });
+                }
+
             }
         };
 
@@ -415,6 +422,7 @@ describe('Haute', () => {
 
             expect(err).to.not.exist();
             expect(calledWith).to.equal([
+                { es6ClassFunc: 'Hello!', length: 1 },
                 { arg: { funcListOne: 'valueOne' }, length: 1 },
                 { arg: { plainListTwo: 'valueTwo' }, length: 1 }
             ]);
@@ -431,7 +439,15 @@ describe('Haute', () => {
         const instance = {
             callThis: function (arg) {
 
-                calledWith.push({ arg, length: arguments.length });
+                if (typeof arg === 'function' && /^class\s/.test(arg.toString())) {
+
+                    const es6ClassFunc = new arg().customFuncInDir();
+                    const es6ClassObj = { msg: es6ClassFunc };
+                    calledWith.push({ es6ClassObj, length: arguments.length });
+                }
+                else {
+                    calledWith.push({ arg, length: arguments.length });
+                }
             }
         };
 
@@ -450,6 +466,7 @@ describe('Haute', () => {
 
             expect(err).to.not.exist();
             expect(calledWith).to.equal([
+                { es6ClassObj: { msg: 'Hello!' }, length: 1 },
                 { arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 },
                 { arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 }
             ]);
