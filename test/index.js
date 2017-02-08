@@ -6,6 +6,8 @@ const Lab = require('lab');
 const Code = require('code');
 const Path = require('path');
 const Haute = require('..');
+const ClassAsFile = require('./closet/class');
+const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 
 // Test shortcuts
 
@@ -399,14 +401,7 @@ describe('Haute', () => {
         const instance = {
             callThis: function (arg) {
 
-                if (typeof arg === 'function' && /^class\s/.test(arg.toString())) {
-                    const es6ClassFunc = new arg().customFuncInDir();
-                    calledWith.push({ es6ClassFunc, length: arguments.length });
-                }
-                else {
-                    calledWith.push({ arg, length: arguments.length });
-                }
-
+                calledWith.push({ arg, length: arguments.length });
             }
         };
 
@@ -421,11 +416,11 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, options, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.equal([
-                { es6ClassFunc: 'Hello!', length: 1 },
-                { arg: { funcListOne: 'valueOne' }, length: 1 },
-                { arg: { plainListTwo: 'valueTwo' }, length: 1 }
-            ]);
+            expect(calledWith).to.have.length(3);
+            expect(calledWith[0].arg).to.shallow.equal(ClassAsDirItem);
+            expect(calledWith[0].length).to.equal(1);
+            expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne' }, length: 1 });
+            expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo' }, length: 1 });
             expect(instance.insideFuncItem).to.equal('instance');
             expect(options.insideFuncItem).to.equal('options');
             done();
@@ -439,15 +434,7 @@ describe('Haute', () => {
         const instance = {
             callThis: function (arg) {
 
-                if (typeof arg === 'function' && /^class\s/.test(arg.toString())) {
-
-                    const es6ClassFunc = new arg().customFuncInDir();
-                    const es6ClassObj = { msg: es6ClassFunc };
-                    calledWith.push({ es6ClassObj, length: arguments.length });
-                }
-                else {
-                    calledWith.push({ arg, length: arguments.length });
-                }
+                calledWith.push({ arg, length: arguments.length });
             }
         };
 
@@ -457,6 +444,15 @@ describe('Haute', () => {
             list: true,
             useFilename: (filename, value) => {
 
+                if (value === ClassAsDirItem) {
+                    return class extends ClassAsDirItem {
+                        static get filename() {
+
+                            return filename;
+                        }
+                    };
+                }
+
                 value.filename = filename;
                 return value;
             }
@@ -465,11 +461,12 @@ describe('Haute', () => {
         Haute(dirname, manifest)(instance, {}, (err) => {
 
             expect(err).to.not.exist();
-            expect(calledWith).to.equal([
-                { es6ClassObj: { msg: 'Hello!' }, length: 1 },
-                { arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 },
-                { arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 }
-            ]);
+            expect(calledWith).to.have.length(3);
+            expect(calledWith[0].arg.prototype).to.be.instanceof(ClassAsDirItem);
+            expect(calledWith[0].arg.filename).to.equal('class-item');
+            expect(calledWith[0].length).to.equal(1);
+            expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 });
+            expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 });
             done();
         });
     });
@@ -580,7 +577,7 @@ describe('Haute', () => {
         });
     });
 
-    it('calls with evaluated es6 class argument in non-list.', (done) => {
+    it('calls with class argument in non-list.', (done) => {
 
         const calledWith = {};
 
@@ -596,14 +593,13 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'es6-class'
+            place: 'class'
         }];
 
         Haute(dirname, manifest)(instance, options, (err) => {
 
             expect(err).to.not.exist();
-            const es6ClassInstance = new calledWith.arg();
-            expect(es6ClassInstance.customFunc()).to.equal('Hello!');
+            expect(calledWith.arg).to.shallow.equal(ClassAsFile);
             expect(calledWith.length).to.equal(1);
             done();
         });
