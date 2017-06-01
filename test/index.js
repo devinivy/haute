@@ -624,7 +624,31 @@ describe('Haute', () => {
 
                 done(new Error('Should not make it here'));
             });
-        }).to.throw(/unexpected token/i);
+        }).to.throw(SyntaxError, /unexpected token/i);
+
+        done();
+    });
+
+    it('throws hard when encountering a module that exists but requires a module that does not exist.', (done) => {
+
+        const instance = {
+            callThis: () => false
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'bad-require'
+        }];
+
+        const haute = Haute(dirname, manifest);
+
+        expect(() => {
+
+            haute(instance, (ignoreErr) => {
+
+                done(new Error('Should not make it here'));
+            });
+        }).to.throw(/Cannot find module/);
 
         done();
     });
