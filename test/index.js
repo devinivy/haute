@@ -3,7 +3,6 @@
 // Load modules
 
 const Lab = require('lab');
-const Code = require('code');
 const Path = require('path');
 const Haute = require('..');
 const ClassAsFile = require('./closet/class');
@@ -14,7 +13,7 @@ const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 const lab = exports.lab = Lab.script();
 const describe = lab.describe;
 const it = lab.it;
-const expect = Code.expect;
+const expect = Lab.expect;
 
 const internals = {};
 
