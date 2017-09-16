@@ -546,33 +546,43 @@ describe('Haute', () => {
         });
     });
 
+    it('calls with lazily-evaluated function arguments.', (done) => {
+
+
+    });
+
     it('calls with evaluated function argument in non-list.', (done) => {
 
-        const calledWith = {};
+        let propValue;
 
         const instance = {
-            callThis: function (arg) {
+            prop: 0,
+            setProp: function (arg) {
 
-                calledWith.arg = arg;
-                calledWith.length = arguments.length;
+                this.prop = 'lazy';
+            },
+            seeProp: function () {
+
+                propValue = this.prop;
             }
         };
 
         const options = {};
 
-        const manifest = [{
-            method: 'callThis',
-            place: 'func'
-        }];
+        const manifest = [
+            {
+                method: 'setProp',
+                place: 'lazy-func-first'
+            },
+            {
+                method: 'seeProp',
+                place: 'lazy-func-second'
+            }
+        ];
 
         Haute(dirname, manifest)(instance, options, (err) => {
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ func: 'value' });
-            expect(calledWith.length).to.equal(1);
-            expect(instance.insideFunc).to.equal('instance');
-            expect(options.insideFunc).to.equal('options');
-            done();
+            done(new Error('TODO'));
         });
     });
 
