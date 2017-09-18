@@ -393,6 +393,38 @@ describe('Haute', () => {
         });
     });
 
+    it('calls with evaluated function argument in list file.', (done) => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'list-func-as-file',
+            list: true
+        }];
+
+        Haute(dirname, manifest)(instance, options, (err) => {
+
+            expect(err).to.not.exist();
+            expect(instance.insideFunc).to.equal('instance');
+            expect(options.insideFunc).to.equal('options');
+            expect(calledWith).to.equal([
+                { arg: { listOne: 'valueOne' }, length: 1 },
+                { arg: { listTwo: 'valueTwo' }, length: 1 }
+            ]);
+            done();
+        });
+    });
+
     it('calls with a list of arguments from multiple directory files.', (done) => {
 
         const calledWith = [];
