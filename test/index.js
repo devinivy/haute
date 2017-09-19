@@ -393,6 +393,33 @@ describe('Haute', () => {
         });
     });
 
+    it('calls with a list item as argument from a plain file.', (done) => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'list-single-as-file',
+            list: true
+        }];
+
+        Haute(dirname, manifest)(instance, {}, (err) => {
+
+            expect(err).to.not.exist();
+            expect(calledWith).to.equal([
+                { arg: { listOne: 'valueOne' }, length: 1 }
+            ]);
+            done();
+        });
+    });
+
     it('calls with evaluated function argument in list file.', (done) => {
 
         const calledWith = [];
@@ -639,6 +666,34 @@ describe('Haute', () => {
             expect(err).to.not.exist();
             expect(calledWith.arg).to.equal({ func: 'value' });
             expect(calledWith.length).to.equal(1);
+            expect(instance.insideFunc).to.equal('instance');
+            expect(options.insideFunc).to.equal('options');
+            done();
+        });
+    });
+
+    it('does not call with evaluated function undefined in non-list.', (done) => {
+
+        let called = false;
+
+        const instance = {
+            callThis: function (arg) {
+
+                called = true;
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'func-empty'
+        }];
+
+        Haute(dirname, manifest)(instance, options, (err) => {
+
+            expect(err).to.not.exist();
+            expect(called).to.equal(false);
             expect(instance.insideFunc).to.equal('instance');
             expect(options.insideFunc).to.equal('options');
             done();

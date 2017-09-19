@@ -6,6 +6,7 @@ module.exports = (instance, options) => {
     options.insideFunc = 'options';
 
     return [
+        undefined, // For good measure, to ensure it's a no-op
         {
             listOne: 'valueOne'
         },
