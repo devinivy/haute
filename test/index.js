@@ -2,18 +2,17 @@
 
 // Load modules
 
-const Lab = require('lab');
 const Path = require('path');
+const Lab = require('lab');
+const Code = require('code');
 const Haute = require('..');
 const ClassAsFile = require('./closet/class');
 const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 
 // Test shortcuts
 
-const lab = exports.lab = Lab.script();
-const describe = lab.describe;
-const it = lab.it;
-const expect = Lab.expect;
+const { describe, it } = exports.lab = Lab.script();
+const { expect } = Code;
 
 const internals = {};
 
@@ -21,14 +20,13 @@ describe('Haute', () => {
 
     const dirname = `${__dirname}/closet`;
 
-    it('throws when provided a bad directory path.', (done) => {
+    it('throws when provided a bad directory path.', () => {
 
         const badPath = `${__dirname}/bad-path`;
-        expect(Haute.bind(null, badPath, [])).to.throw(`Directory "${badPath}" does not exist.`);
-        done();
+        expect(() => Haute.using(badPath, 'instance', [])).to.throw(`Directory "${badPath}" does not exist.`);
     });
 
-    it('calls with argument from a plain file.', (done) => {
+    it('calls with argument from a plain file.', async () => {
 
         const calledWith = {};
 
@@ -45,16 +43,13 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ file: 'value' });
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ file: 'value' });
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('processes multiple items in manifest in order.', (done) => {
+    it('processes multiple items in manifest in order.', async () => {
 
         const calledWith = [];
         let order = '';
@@ -92,20 +87,17 @@ describe('Haute', () => {
             }
         ];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith).to.equal([
-                { arg: { file: 'value' }, length: 1 },
-                { arg: { file: 'value' }, length: 1 },
-                { arg: { file: 'value' }, length: 1 }
-            ]);
-            expect(order).to.equal('123');
-            done();
-        });
+        expect(calledWith).to.equal([
+            { arg: { file: 'value' }, length: 1 },
+            { arg: { file: 'value' }, length: 1 },
+            { arg: { file: 'value' }, length: 1 }
+        ]);
+        expect(order).to.equal('123');
     });
 
-    it('calls shallow method, maintaining context.', (done) => {
+    it('calls shallow method, maintaining context.', async () => {
 
         const instance = {
             callThis: function (arg) {
@@ -119,15 +111,12 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(instance.context).to.equal(true);
-            done();
-        });
+        expect(instance.context).to.equal(true);
     });
 
-    it('calls deep method, maintaining context.', (done) => {
+    it('calls deep method, maintaining context.', async () => {
 
         const calledWith = {};
 
@@ -147,17 +136,14 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ file: 'value' });
-            expect(calledWith.length).to.equal(1);
-            expect(instance.deep.context).to.equal(true);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ file: 'value' });
+        expect(calledWith.length).to.equal(1);
+        expect(instance.deep.context).to.equal(true);
     });
 
-    it('allows options to be passed optionally.', (done) => {
+    it('allows options to be passed optionally.', async () => {
 
         const calledWith = {};
 
@@ -174,87 +160,80 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        // No options passed here.........
-        Haute(dirname, manifest)(instance, (err) => {
+        // No options passed
+        await Haute.using(dirname, 'instance', manifest)(instance);
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ file: 'value' });
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ file: 'value' });
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('respects method async option.', (done) => {
+    it('awaits async method.', async () => {
 
         const calledWith = {};
 
         const instance = {
-            callThis: function (arg, next) {
+            callThis: function (arg) {
 
                 calledWith.arg = arg;
-                calledWith.next = next;
                 calledWith.length = arguments.length;
-                setTimeout(() => {
 
-                    calledWith.waited = true;
-                    next();
-                }, 1);
+                return new Promise((resolve) => {
+
+                    setTimeout(() => {
+
+                        calledWith.waited = true;
+                        resolve();
+                    }, 1);
+                });
             }
         };
 
         const manifest = [{
             method: 'callThis',
-            place: 'file',
-            async: true
+            place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ file: 'value' });
-            expect(calledWith.next).to.be.a.function();
-            expect(calledWith.waited).to.equal(true);
-            expect(calledWith.length).to.equal(2);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ file: 'value' });
+        expect(calledWith.waited).to.equal(true);
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('respects method async option, call passing error.', (done) => {
+    it('awaits async method, call passing error.', async () => {
 
         const calledWith = {};
 
         const instance = {
-            callThis: function (arg, next) {
+            callThis: function (arg) {
 
                 calledWith.arg = arg;
-                calledWith.next = next;
                 calledWith.length = arguments.length;
-                setTimeout(() => {
 
-                    calledWith.waited = true;
-                    next(new Error(':)'));
-                }, 1);
+                return new Promise((resolve, reject) => {
+
+                    setTimeout(() => {
+
+                        calledWith.waited = true;
+                        reject(new Error(':)'));
+                    }, 1);
+                });
             }
         };
 
         const manifest = [{
             method: 'callThis',
-            place: 'file',
-            async: true
+            place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await expect(Haute.using(dirname, 'instance', manifest)(instance, {})).to.reject(/:\)$/);
 
-            expect(err.message).to.endWith(':)');
-            expect(calledWith.arg).to.equal({ file: 'value' });
-            expect(calledWith.next).to.be.a.function();
-            expect(calledWith.waited).to.equal(true);
-            expect(calledWith.length).to.equal(2);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ file: 'value' });
+        expect(calledWith.waited).to.equal(true);
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('respects method signature option.', (done) => {
+    it('respects method signature option.', async () => {
 
         const calledWith = {};
 
@@ -273,17 +252,14 @@ describe('Haute', () => {
             signature: ['sigOne', 'sigTwo']
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.sigOne).to.equal('valueOne');
-            expect(calledWith.sigTwo).to.equal('valueTwo');
-            expect(calledWith.length).to.equal(2);
-            done();
-        });
+        expect(calledWith.sigOne).to.equal('valueOne');
+        expect(calledWith.sigTwo).to.equal('valueTwo');
+        expect(calledWith.length).to.equal(2);
     });
 
-    it('calls method without optional, omitted arguments.', (done) => {
+    it('calls method without optional, omitted arguments.', async () => {
 
         const calledWith = {};
 
@@ -301,16 +277,13 @@ describe('Haute', () => {
             signature: ['[sigOne]', 'sigTwo']
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.sigTwo).to.equal('valueTwo');
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.sigTwo).to.equal('valueTwo');
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('calls method with optional but present arguments.', (done) => {
+    it('calls method with optional but present arguments.', async () => {
 
         const calledWith = {};
 
@@ -329,17 +302,14 @@ describe('Haute', () => {
             signature: ['[sigOne]', 'sigTwo']
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance);
 
-            expect(err).to.not.exist();
-            expect(calledWith.sigOne).to.equal('valueOne');
-            expect(calledWith.sigTwo).to.equal('valueTwo');
-            expect(calledWith.length).to.equal(2);
-            done();
-        });
+        expect(calledWith.sigOne).to.equal('valueOne');
+        expect(calledWith.sigTwo).to.equal('valueTwo');
+        expect(calledWith.length).to.equal(2);
     });
 
-    it('calls with argument from a json file.', (done) => {
+    it('calls with argument from a json file.', async () => {
 
         const calledWith = {};
 
@@ -356,16 +326,13 @@ describe('Haute', () => {
             place: 'json-file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ json: 'value' });
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ json: 'value' });
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('calls with a list of arguments from a plain file.', (done) => {
+    it('calls with a list of arguments from a plain file.', async () => {
 
         const calledWith = [];
 
@@ -382,18 +349,15 @@ describe('Haute', () => {
             list: true
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith).to.equal([
-                { arg: { listOne: 'valueOne' }, length: 1 },
-                { arg: { listTwo: 'valueTwo' }, length: 1 }
-            ]);
-            done();
-        });
+        expect(calledWith).to.equal([
+            { arg: { listOne: 'valueOne' }, length: 1 },
+            { arg: { listTwo: 'valueTwo' }, length: 1 }
+        ]);
     });
 
-    it('calls with a list item as argument from a plain file.', (done) => {
+    it('calls with a list item as argument from a plain file.', async () => {
 
         const calledWith = [];
 
@@ -410,17 +374,14 @@ describe('Haute', () => {
             list: true
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith).to.equal([
-                { arg: { listOne: 'valueOne' }, length: 1 }
-            ]);
-            done();
-        });
+        expect(calledWith).to.equal([
+            { arg: { listOne: 'valueOne' }, length: 1 }
+        ]);
     });
 
-    it('calls with evaluated function argument in list file.', (done) => {
+    it('calls with evaluated function argument in list file.', async () => {
 
         const calledWith = [];
 
@@ -439,20 +400,17 @@ describe('Haute', () => {
             list: true
         }];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(instance.insideFunc).to.equal('instance');
-            expect(options.insideFunc).to.equal('options');
-            expect(calledWith).to.equal([
-                { arg: { listOne: 'valueOne' }, length: 1 },
-                { arg: { listTwo: 'valueTwo' }, length: 1 }
-            ]);
-            done();
-        });
+        expect(instance.insideFunc).to.equal('instance');
+        expect(options.insideFunc).to.equal('options');
+        expect(calledWith).to.equal([
+            { arg: { listOne: 'valueOne' }, length: 1 },
+            { arg: { listTwo: 'valueTwo' }, length: 1 }
+        ]);
     });
 
-    it('calls with a list of arguments from multiple directory files.', (done) => {
+    it('calls with a list of arguments from multiple directory files.', async () => {
 
         const calledWith = [];
 
@@ -471,21 +429,18 @@ describe('Haute', () => {
             list: true
         }];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(calledWith).to.have.length(3);
-            expect(calledWith[0].arg).to.shallow.equal(ClassAsDirItem);
-            expect(calledWith[0].length).to.equal(1);
-            expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne' }, length: 1 });
-            expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo' }, length: 1 });
-            expect(instance.insideFuncItem).to.equal('instance');
-            expect(options.insideFuncItem).to.equal('options');
-            done();
-        });
+        expect(calledWith).to.have.length(3);
+        expect(calledWith[0].arg).to.shallow.equal(ClassAsDirItem);
+        expect(calledWith[0].length).to.equal(1);
+        expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne' }, length: 1 });
+        expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo' }, length: 1 });
+        expect(instance.insideFuncItem).to.equal('instance');
+        expect(options.insideFuncItem).to.equal('options');
     });
 
-    it('respects useFilename option when listing multiple directory files.', (done) => {
+    it('respects useFilename option when listing multiple directory files.', async () => {
 
         const calledWith = [];
 
@@ -516,20 +471,17 @@ describe('Haute', () => {
             }
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith).to.have.length(3);
-            expect(calledWith[0].arg.prototype).to.be.instanceof(ClassAsDirItem);
-            expect(calledWith[0].arg.filename).to.equal('class-item');
-            expect(calledWith[0].length).to.equal(1);
-            expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 });
-            expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 });
-            done();
-        });
+        expect(calledWith).to.have.length(3);
+        expect(calledWith[0].arg.prototype).to.be.instanceof(ClassAsDirItem);
+        expect(calledWith[0].arg.filename).to.equal('class-item');
+        expect(calledWith[0].length).to.equal(1);
+        expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 });
+        expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 });
     });
 
-    it('calls with argument from an index file.', (done) => {
+    it('calls with argument from an index file.', async () => {
 
         const calledWith = {};
 
@@ -546,16 +498,13 @@ describe('Haute', () => {
             place: 'dir-index'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ dirIndex: 'value' });
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ dirIndex: 'value' });
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('calls with argument from a deep file.', (done) => {
+    it('calls with argument from a deep file.', async () => {
 
         const calledWith = {};
 
@@ -572,16 +521,13 @@ describe('Haute', () => {
             place: 'deeper/file'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ deeper: 'value' });
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.equal({ deeper: 'value' });
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('skips calling with empty arguments.', (done) => {
+    it('skips calling with empty arguments.', async () => {
 
         let called = false;
 
@@ -597,15 +543,12 @@ describe('Haute', () => {
             place: 'doesnt-exist'
         }];
 
-        Haute(dirname, manifest)(instance, {}, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, {});
 
-            expect(err).to.not.exist();
-            expect(called).to.equal(false);
-            done();
-        });
+        expect(called).to.equal(false);
     });
 
-    it('calls with lazily-evaluated function arguments.', (done) => {
+    it('calls with lazily-evaluated function arguments.', async () => {
 
         let propValue;
 
@@ -634,15 +577,12 @@ describe('Haute', () => {
             }
         ];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(propValue).to.equal('lazy');
-            done();
-        });
+        expect(propValue).to.equal('lazy');
     });
 
-    it('calls with evaluated function argument in non-list.', (done) => {
+    it('calls with evaluated function argument in non-list.', async () => {
 
         const calledWith = {};
 
@@ -661,18 +601,15 @@ describe('Haute', () => {
             place: 'func'
         }];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.equal({ func: 'value' });
-            expect(calledWith.length).to.equal(1);
-            expect(instance.insideFunc).to.equal('instance');
-            expect(options.insideFunc).to.equal('options');
-            done();
-        });
+        expect(calledWith.arg).to.equal({ func: 'value' });
+        expect(calledWith.length).to.equal(1);
+        expect(instance.insideFunc).to.equal('instance');
+        expect(options.insideFunc).to.equal('options');
     });
 
-    it('does not call with evaluated function undefined in non-list.', (done) => {
+    it('does not call with evaluated function undefined in non-list.', async () => {
 
         let called = false;
 
@@ -690,17 +627,14 @@ describe('Haute', () => {
             place: 'func-empty'
         }];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(called).to.equal(false);
-            expect(instance.insideFunc).to.equal('instance');
-            expect(options.insideFunc).to.equal('options');
-            done();
-        });
+        expect(called).to.equal(false);
+        expect(instance.insideFunc).to.equal('instance');
+        expect(options.insideFunc).to.equal('options');
     });
 
-    it('calls with class argument in non-list.', (done) => {
+    it('calls with class argument in non-list.', async () => {
 
         const calledWith = {};
 
@@ -719,16 +653,13 @@ describe('Haute', () => {
             place: 'class'
         }];
 
-        Haute(dirname, manifest)(instance, options, (err) => {
+        await Haute.using(dirname, 'instance', manifest)(instance, options);
 
-            expect(err).to.not.exist();
-            expect(calledWith.arg).to.shallow.equal(ClassAsFile);
-            expect(calledWith.length).to.equal(1);
-            done();
-        });
+        expect(calledWith.arg).to.shallow.equal(ClassAsFile);
+        expect(calledWith.length).to.equal(1);
     });
 
-    it('throws hard when encountering a syntax error.', (done) => {
+    it('throws hard when encountering a syntax error.', async () => {
 
         const instance = {
             callThis: () => false
@@ -739,20 +670,12 @@ describe('Haute', () => {
             place: 'bad-syntax'
         }];
 
-        const haute = Haute(dirname, manifest);
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-        expect(() => {
-
-            haute(instance, (ignoreErr) => {
-
-                done(new Error('Should not make it here'));
-            });
-        }).to.throw(SyntaxError, /unexpected token/i);
-
-        done();
+        await expect(haute(instance)).to.reject(SyntaxError, /unexpected token/i);
     });
 
-    it('throws hard when encountering a module that exists but requires a module that does not exist.', (done) => {
+    it('throws hard when encountering a module that exists but requires a module that does not exist.', async () => {
 
         const instance = {
             callThis: () => false
@@ -763,20 +686,12 @@ describe('Haute', () => {
             place: 'bad-require'
         }];
 
-        const haute = Haute(dirname, manifest);
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-        expect(() => {
-
-            haute(instance, (ignoreErr) => {
-
-                done(new Error('Should not make it here'));
-            });
-        }).to.throw(/Cannot find module/);
-
-        done();
+        await expect(haute(instance)).to.reject(/Cannot find module/);
     });
 
-    it('tags sync runtime errors with calling info.', (done) => {
+    it('tags sync runtime errors with calling info.', async () => {
 
         const instance = {
             callThis: () => {
@@ -790,89 +705,87 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        const haute = Haute(dirname, manifest);
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-        expect(() => {
-
-            haute(instance, (ignoreErr) => {
-
-                done(new Error('Should not make it here'));
-            });
-        }).to.throw(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
-
-        done();
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
     });
 
-    it('tags async runtime errors with calling info.', (done) => {
+    it('tags async runtime errors with calling info.', async () => {
 
         const instance = {
-            callThis: (arg, cb) => cb(new Error('Runtime oopsie!'))
+            callThis: async (arg) => {
+
+                await Promise.resolve();
+
+                throw new Error('Runtime oopsie!');
+            }
         };
 
         const manifest = [{
             method: 'callThis',
-            place: 'file',
-            async: true
+            place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, (err) => {
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-            expect(err).to.exist();
-            expect(err.message).to.equal(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
-
-            done();
-        });
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
     });
 
-    it('tags runtime errors without existing messages.', (done) => {
+    it('tags runtime errors without existing messages.', async () => {
 
         const instance = {
-            callThis: (arg, cb) => cb(new Error())
+            callThis: async (arg) => {
+
+                await Promise.resolve();
+
+                throw new Error();
+            }
         };
 
         const manifest = [{
             method: 'callThis',
-            place: 'file',
-            async: true
+            place: 'file'
         }];
 
-        Haute(dirname, manifest)(instance, (err) => {
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-            expect(err).to.exist();
-            expect(err.message).to.equal(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}`);
-
-            done();
-        });
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}`);
     });
 
-    it('tags runtime errors with correct path in single list file.', (done) => {
+    it('tags runtime errors with correct path in single list file.', async () => {
 
         const instance = {
-            callThis: (arg, cb) => cb(new Error())
+            callThis: async (arg) => {
+
+                await Promise.resolve();
+
+                throw new Error();
+            }
         };
 
         const manifest = [{
             method: 'callThis',
             place: 'list-as-file',
-            list: true,
-            async: true
+            list: true
         }];
 
-        Haute(dirname, manifest)(instance, (err) => {
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-            expect(err).to.exist();
-            expect(err.message).to.startWith(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-file.js')}`);
-
-            done();
-        });
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-file.js')}`);
     });
 
-    it('tags runtime errors with correct path in listed directory files.', (done) => {
+    it('tags runtime errors with correct path in listed directory files.', async () => {
 
         const instance = {
-            callThis: (filename, cb) => {
+            callThis: async (filename) => {
 
-                return cb((filename === 'plain-item') ? new Error() : null);
+                await Promise.resolve();
+
+                if (filename === 'plain-item') {
+                    throw new Error();
+                }
+
+                return null;
             }
         };
 
@@ -880,16 +793,11 @@ describe('Haute', () => {
             method: 'callThis',
             place: 'list-as-dir-files',
             list: true,
-            async: true,
             useFilename: (filename) => filename
         }];
 
-        Haute(dirname, manifest)(instance, (err) => {
+        const haute = Haute.using(dirname, 'instance', manifest);
 
-            expect(err).to.exist();
-            expect(err.message).to.startWith(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-dir-files', 'plain-item.js')}`);
-
-            done();
-        });
+        await expect(haute(instance, {})).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-dir-files', 'plain-item.js')}`);
     });
 });
