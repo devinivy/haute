@@ -33,6 +33,6 @@
   "devDependencies": {
     "code": "5.x.x",
     "coveralls": "2.x.x",
-    "lab": "14.x.x"
+    "lab": "15.x.x"
   }
 }

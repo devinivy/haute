@@ -11,10 +11,8 @@ const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 
 // Test shortcuts
 
-const lab = exports.lab = Lab.script();
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
+const { describe, it } = exports.lab = Lab.script();
+const { expect } = Code;
 
 const internals = {};
 
@@ -22,7 +20,7 @@ describe('Haute', () => {
 
     const dirname = `${__dirname}/closet`;
 
-    it('throws when provided a bad directory path.', async () => {
+    it('throws when provided a bad directory path.', () => {
 
         const badPath = `${__dirname}/bad-path`;
         expect(() => Haute.using(badPath, 'instance', [])).to.throw(`Directory "${badPath}" does not exist.`);
@@ -717,6 +715,8 @@ describe('Haute', () => {
         const instance = {
             callThis: async (arg) => {
 
+                await Promise.resolve();
+
                 throw new Error('Runtime oopsie!');
             }
         };
@@ -735,6 +735,8 @@ describe('Haute', () => {
 
         const instance = {
             callThis: async (arg) => {
+
+                await Promise.resolve();
 
                 throw new Error();
             }
@@ -755,6 +757,8 @@ describe('Haute', () => {
         const instance = {
             callThis: async (arg) => {
 
+                await Promise.resolve();
+
                 throw new Error();
             }
         };
@@ -774,6 +778,8 @@ describe('Haute', () => {
 
         const instance = {
             callThis: async (filename) => {
+
+                await Promise.resolve();
 
                 if (filename === 'plain-item') {
                     throw new Error();
