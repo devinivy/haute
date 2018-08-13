@@ -18,12 +18,22 @@ const internals = {};
 
 describe('Haute', () => {
 
-    const dirname = `${__dirname}/closet`;
+    const closetDir = `${__dirname}/closet`;
+    const using = (dirname, instanceName, manifest) => {
 
-    it('throws when provided a bad directory path.', () => {
+        return async (...args) => {
+
+            const calls = Haute.calls(instanceName, manifest.map((item) => ({ ...item, dirname })));
+            await Haute.run(calls, ...args);
+        };
+    };
+
+    it('throws when provided a bad directory path.', async () => {
 
         const badPath = `${__dirname}/bad-path`;
-        expect(() => Haute.using(badPath, 'instance', [])).to.throw(`Directory "${badPath}" does not exist.`);
+        const haute = using(badPath, 'instance', [{}]);
+
+        await expect(haute({})).to.reject(`Directory "${badPath}" does not exist.`);
     });
 
     it('calls with argument from a plain file.', async () => {
@@ -43,7 +53,7 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ file: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -87,7 +97,7 @@ describe('Haute', () => {
             }
         ];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith).to.equal([
             { arg: { file: 'value' }, length: 1 },
@@ -111,7 +121,7 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(instance.context).to.equal(true);
     });
@@ -136,7 +146,7 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ file: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -161,7 +171,7 @@ describe('Haute', () => {
         }];
 
         // No options passed
-        await Haute.using(dirname, 'instance', manifest)(instance);
+        await using(closetDir, 'instance', manifest)(instance);
 
         expect(calledWith.arg).to.equal({ file: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -193,7 +203,7 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ file: 'value' });
         expect(calledWith.waited).to.equal(true);
@@ -226,7 +236,7 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        await expect(Haute.using(dirname, 'instance', manifest)(instance, {})).to.reject(/:\)$/);
+        await expect(using(closetDir, 'instance', manifest)(instance, {})).to.reject(/:\)$/);
 
         expect(calledWith.arg).to.equal({ file: 'value' });
         expect(calledWith.waited).to.equal(true);
@@ -252,7 +262,7 @@ describe('Haute', () => {
             signature: ['sigOne', 'sigTwo']
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.sigOne).to.equal('valueOne');
         expect(calledWith.sigTwo).to.equal('valueTwo');
@@ -277,7 +287,7 @@ describe('Haute', () => {
             signature: ['[sigOne]', 'sigTwo']
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.sigTwo).to.equal('valueTwo');
         expect(calledWith.length).to.equal(1);
@@ -302,7 +312,7 @@ describe('Haute', () => {
             signature: ['[sigOne]', 'sigTwo']
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance);
+        await using(closetDir, 'instance', manifest)(instance);
 
         expect(calledWith.sigOne).to.equal('valueOne');
         expect(calledWith.sigTwo).to.equal('valueTwo');
@@ -326,7 +336,7 @@ describe('Haute', () => {
             place: 'json-file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ json: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -349,7 +359,7 @@ describe('Haute', () => {
             list: true
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith).to.equal([
             { arg: { listOne: 'valueOne' }, length: 1 },
@@ -374,7 +384,7 @@ describe('Haute', () => {
             list: true
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith).to.equal([
             { arg: { listOne: 'valueOne' }, length: 1 }
@@ -400,7 +410,7 @@ describe('Haute', () => {
             list: true
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(instance.insideFunc).to.equal('instance');
         expect(options.insideFunc).to.equal('options');
@@ -429,7 +439,7 @@ describe('Haute', () => {
             list: true
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(calledWith).to.have.length(3);
         expect(calledWith[0].arg).to.shallow.equal(ClassAsDirItem);
@@ -471,7 +481,7 @@ describe('Haute', () => {
             }
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith).to.have.length(3);
         expect(calledWith[0].arg.prototype).to.be.instanceof(ClassAsDirItem);
@@ -498,7 +508,7 @@ describe('Haute', () => {
             place: 'dir-index'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ dirIndex: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -521,7 +531,7 @@ describe('Haute', () => {
             place: 'deeper/file'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith.arg).to.equal({ deeper: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -543,7 +553,7 @@ describe('Haute', () => {
             place: 'doesnt-exist'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, {});
+        await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(called).to.equal(false);
     });
@@ -577,7 +587,7 @@ describe('Haute', () => {
             }
         ];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(propValue).to.equal('lazy');
     });
@@ -601,7 +611,7 @@ describe('Haute', () => {
             place: 'func'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(calledWith.arg).to.equal({ func: 'value' });
         expect(calledWith.length).to.equal(1);
@@ -627,7 +637,7 @@ describe('Haute', () => {
             place: 'func-empty'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(called).to.equal(false);
         expect(instance.insideFunc).to.equal('instance');
@@ -653,7 +663,7 @@ describe('Haute', () => {
             place: 'class'
         }];
 
-        await Haute.using(dirname, 'instance', manifest)(instance, options);
+        await using(closetDir, 'instance', manifest)(instance, options);
 
         expect(calledWith.arg).to.shallow.equal(ClassAsFile);
         expect(calledWith.length).to.equal(1);
@@ -670,7 +680,7 @@ describe('Haute', () => {
             place: 'bad-syntax'
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
         await expect(haute(instance)).to.reject(SyntaxError, /unexpected token/i);
     });
@@ -686,7 +696,7 @@ describe('Haute', () => {
             place: 'bad-require'
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
         await expect(haute(instance)).to.reject(/Cannot find module/);
     });
@@ -705,9 +715,9 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
-        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'file.js')}: Runtime oopsie!`);
     });
 
     it('tags async runtime errors with calling info.', async () => {
@@ -726,9 +736,9 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
-        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}: Runtime oopsie!`);
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'file.js')}: Runtime oopsie!`);
     });
 
     it('tags runtime errors without existing messages.', async () => {
@@ -747,9 +757,9 @@ describe('Haute', () => {
             place: 'file'
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
-        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'file.js')}`);
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'file.js')}`);
     });
 
     it('tags runtime errors with correct path in single list file.', async () => {
@@ -769,9 +779,9 @@ describe('Haute', () => {
             list: true
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
-        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-file.js')}`);
+        await expect(haute(instance)).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'list-as-file.js')}`);
     });
 
     it('tags runtime errors with correct path in listed directory files.', async () => {
@@ -796,8 +806,8 @@ describe('Haute', () => {
             useFilename: (filename) => filename
         }];
 
-        const haute = Haute.using(dirname, 'instance', manifest);
+        const haute = using(closetDir, 'instance', manifest);
 
-        await expect(haute(instance, {})).to.reject(`instance.callThis() called by haute using ${Path.join(dirname, 'list-as-dir-files', 'plain-item.js')}`);
+        await expect(haute(instance, {})).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'list-as-dir-files', 'plain-item.js')}`);
     });
 });
