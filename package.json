@@ -31,7 +31,7 @@
   "homepage": "https://github.com/devinivy/haute#readme",
   "dependencies": {
     "hoek": "5.x.x",
-    "require-dir": "1.x.x"
+    "require-directory": "2.x.x"
   },
   "devDependencies": {
     "code": "5.x.x",

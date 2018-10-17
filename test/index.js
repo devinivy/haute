@@ -465,7 +465,7 @@ describe('Haute', () => {
             method: 'callThis',
             place: 'list-as-dir-files',
             list: true,
-            useFilename: (filename, value) => {
+            useFilename: (value, filename, path) => {
 
                 if (value === ClassAsDirItem) {
                     return class extends ClassAsDirItem {
@@ -473,10 +473,15 @@ describe('Haute', () => {
 
                             return filename;
                         }
+                        static get path() {
+
+                            return path;
+                        }
                     };
                 }
 
                 value.filename = filename;
+                value.path = path;
                 return value;
             }
         }];
@@ -486,9 +491,10 @@ describe('Haute', () => {
         expect(calledWith).to.have.length(3);
         expect(calledWith[0].arg.prototype).to.be.instanceof(ClassAsDirItem);
         expect(calledWith[0].arg.filename).to.equal('class-item');
+        expect(calledWith[0].arg.path).to.equal('class-item.js');
         expect(calledWith[0].length).to.equal(1);
-        expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item' }, length: 1 });
-        expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item' }, length: 1 });
+        expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item', path: 'func-item.js' }, length: 1 });
+        expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item', path: 'plain-item.js' }, length: 1 });
     });
 
     it('calls with argument from an index file.', async () => {
@@ -803,11 +809,279 @@ describe('Haute', () => {
             method: 'callThis',
             place: 'list-as-dir-files',
             list: true,
-            useFilename: (filename) => filename
+            useFilename: (value, filename) => filename
         }];
 
         const haute = using(closetDir, 'instance', manifest);
 
         await expect(haute(instance, {})).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'list-as-dir-files', 'plain-item.js')}`);
+    });
+
+    it('recurses by default.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item', path: 'item.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+        ]);
+    });
+
+    it('recurses when configured on.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item', path: 'item.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+        ]);
+    });
+
+    it('does not recurse when configured off.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: false,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item', path: 'item.js' }, length: 1 }
+        ]);
+    });
+
+    it('can exclude files with a function.', async () => {
+
+        const calledWith = [];
+        const excludeArgs = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: true,
+            exclude: (filename, path, ...others) => {
+
+                excludeArgs.push([filename, path, ...others]);
+
+                return path.split(Path.sep).includes('a');
+            },
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(excludeArgs).to.equal([
+            ['item', 'item.js'],
+            ['item-one', 'one/a/item-one.js'],
+            ['item-two', 'one/a/item-two.js'],
+            ['item-one', 'one/b/item-one.js'],
+            ['item-one', 'two/a/item-one.js'],
+            ['item-one', 'two/item-one.js']
+        ]);
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item', path: 'item.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+        ]);
+    });
+
+    it('can exclude files with a RegExp.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: true,
+            exclude: /-one/,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item', path: 'item.js' }, length: 1 },
+            { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 }
+        ]);
+    });
+
+    it('can include files with a function.', async () => {
+
+        const calledWith = [];
+        const excludeArgs = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: true,
+            include: (filename, path, ...others) => {
+
+                excludeArgs.push([filename, path, ...others]);
+
+                return path.split(Path.sep).includes('a');
+            },
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(excludeArgs).to.equal([
+            ['item', 'item.js'],
+            ['item-one', 'one/a/item-one.js'],
+            ['item-two', 'one/a/item-two.js'],
+            ['item-one', 'one/b/item-one.js'],
+            ['item-one', 'two/a/item-one.js'],
+            ['item-one', 'two/item-one.js']
+        ]);
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
+        ]);
+    });
+
+    it('can include files with a RegExp.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'recurse',
+            list: true,
+            recurse: true,
+            include: /-one/,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+        ]);
     });
 });
