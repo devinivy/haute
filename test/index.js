@@ -817,6 +817,53 @@ describe('Haute', () => {
         await expect(haute(instance, {})).to.reject(`instance.callThis() called by haute using ${Path.join(closetDir, 'list-as-dir-files', 'plain-item.js')}`);
     });
 
+    it('calls custom "method" implementation.', async () => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.arg = arg;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const manifest = [{
+            method: (inst, { option }, { file }) => {
+
+                return inst.callThis({
+                    file: `${file}-${option}`
+                });
+            },
+            place: 'file'
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, { option: 'with-option' });
+
+        expect(calledWith.arg).to.equal({ file: 'value-with-option' });
+        expect(calledWith.length).to.equal(1);
+    });
+
+    it('tags custom "method" runtime errors with calling info.', async () => {
+
+        const instance = {
+            callThis: () => {
+
+                throw new Error('Runtime oopsie!');
+            }
+        };
+
+        const manifest = [{
+            method: (inst, ...args) => inst.callThis(...args),
+            place: 'file'
+        }];
+
+        const haute = using(closetDir, 'instance', manifest);
+
+        await expect(haute(instance)).to.reject(`Custom "file" method called by haute using ${Path.join(closetDir, 'file.js')}: Runtime oopsie!`);
+    });
+
     it('recurses by default.', async () => {
 
         const calledWith = [];
