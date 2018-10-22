@@ -1,6 +1,6 @@
 {
   "name": "haute",
-  "version": "2.0.0",
+  "version": "3.0.0-rc.1",
   "description": "directory structure as code",
   "main": "lib/index.js",
   "engines": {
@@ -31,11 +31,11 @@
   "homepage": "https://github.com/devinivy/haute#readme",
   "dependencies": {
     "hoek": "5.x.x",
-    "require-dir": "0.3.x"
+    "require-directory": "2.x.x"
   },
   "devDependencies": {
     "code": "5.x.x",
-    "coveralls": "2.x.x",
-    "lab": "15.x.x"
+    "coveralls": "3.x.x",
+    "lab": "16.x.x"
   }
 }
