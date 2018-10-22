@@ -877,7 +877,7 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
             useFilename: (value, filename, path) => {
 
@@ -912,9 +912,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: true,
+            recursive: true,
             useFilename: (value, filename, path) => {
 
                 value.filename = filename;
@@ -948,9 +948,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: false,
+            recursive: false,
             useFilename: (value, filename, path) => {
 
                 value.filename = filename;
@@ -980,9 +980,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: true,
+            recursive: true,
             exclude: (filename, path, ...others) => {
 
                 excludeArgs.push([filename, path, ...others]);
@@ -1028,9 +1028,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: true,
+            recursive: true,
             exclude: /-one/,
             useFilename: (value, filename, path) => {
 
@@ -1062,9 +1062,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: true,
+            recursive: true,
             include: (filename, path, ...others) => {
 
                 excludeArgs.push([filename, path, ...others]);
@@ -1110,9 +1110,9 @@ describe('Haute', () => {
 
         const manifest = [{
             method: 'callThis',
-            place: 'recurse',
+            place: 'recursive',
             list: true,
-            recurse: true,
+            recursive: true,
             include: /-one/,
             useFilename: (value, filename, path) => {
 
