@@ -3,8 +3,8 @@
 // Load modules
 
 const Path = require('path');
-const Lab = require('lab');
-const Code = require('code');
+const Lab = require('@hapi/lab');
+const Code = require('@hapi/code');
 const Haute = require('..');
 const ClassAsFile = require('./closet/class');
 const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
