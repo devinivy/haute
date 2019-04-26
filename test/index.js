@@ -378,16 +378,24 @@ describe('Haute', () => {
             }
         };
 
-        const manifest = [{
-            method: 'callThis',
-            place: 'list-single-as-file',
-            list: true
-        }];
+        const manifest = [
+            {   // Non-lazy version
+                method: 'callThis',
+                place: 'list-single-as-file',
+                list: true
+            },
+            {   // Lazy version
+                method: 'callThis',
+                place: 'lazy-func-first',
+                list: true
+            }
+        ];
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
         expect(calledWith).to.equal([
-            { arg: { listOne: 'valueOne' }, length: 1 }
+            { arg: { listOne: 'valueOne' }, length: 1 },
+            { arg: 'lazy', length: 1 }
         ]);
     });
 
@@ -414,9 +422,14 @@ describe('Haute', () => {
 
         expect(instance.insideFunc).to.equal('instance');
         expect(options.insideFunc).to.equal('options');
-        expect(calledWith).to.equal([
+
+        const [one, two, three, ...others] = calledWith;
+
+        expect(others).to.have.length(0);
+        expect([one, two, { ...three, arg: three.arg() }]).to.equal([
             { arg: { listOne: 'valueOne' }, length: 1 },
-            { arg: { listTwo: 'valueTwo' }, length: 1 }
+            { arg: { listTwo: 'valueTwo' }, length: 1 },
+            { arg: { listThree: 'valueThree' }, length: 1 }
         ]);
     });
 
