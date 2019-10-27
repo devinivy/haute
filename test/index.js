@@ -433,6 +433,40 @@ describe('Haute', () => {
         ]);
     });
 
+    it('calls with evaluated async function argument in list file.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'list-func-async-as-file',
+            list: true
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, options);
+
+        expect(instance.insideFunc).to.equal('instance');
+        expect(options.insideFunc).to.equal('options');
+
+        const [one, two, three, ...others] = calledWith;
+
+        expect(others).to.have.length(0);
+        expect([one, two, { ...three, arg: three.arg() }]).to.equal([
+            { arg: { listOne: 'valueOne' }, length: 1 },
+            { arg: { listTwo: 'valueTwo' }, length: 1 },
+            { arg: { listThree: 'valueThree' }, length: 1 }
+        ]);
+    });
+
     it('calls with a list of arguments from multiple directory files.', async () => {
 
         const calledWith = [];
@@ -628,6 +662,33 @@ describe('Haute', () => {
         const manifest = [{
             method: 'callThis',
             place: 'func'
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, options);
+
+        expect(calledWith.arg).to.equal({ func: 'value' });
+        expect(calledWith.length).to.equal(1);
+        expect(instance.insideFunc).to.equal('instance');
+        expect(options.insideFunc).to.equal('options');
+    });
+
+    it('calls with evaluated async function argument in non-list.', async () => {
+
+        const calledWith = {};
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.arg = arg;
+                calledWith.length = arguments.length;
+            }
+        };
+
+        const options = {};
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'func-async'
         }];
 
         await using(closetDir, 'instance', manifest)(instance, options);
