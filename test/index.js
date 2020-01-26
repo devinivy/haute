@@ -508,11 +508,15 @@ describe('Haute', () => {
             }
         };
 
+        const useFilenameOnFiles = [];
+
         const manifest = [{
             method: 'callThis',
             place: 'list-as-dir-files',
             list: true,
             useFilename: (value, filename, path) => {
+
+                useFilenameOnFiles.push(filename);
 
                 if (value === ClassAsDirItem) {
                     return class extends ClassAsDirItem {
@@ -542,6 +546,8 @@ describe('Haute', () => {
         expect(calledWith[0].length).to.equal(1);
         expect(calledWith[1]).to.equal({ arg: { funcListOne: 'valueOne', filename: 'func-item', path: 'func-item.js' }, length: 1 });
         expect(calledWith[2]).to.equal({ arg: { plainListTwo: 'valueTwo', filename: 'plain-item', path: 'plain-item.js' }, length: 1 });
+        expect(useFilenameOnFiles).to.only.once.include(['class-item', 'func-item', 'plain-item']);
+        expect(useFilenameOnFiles).to.not.include('empty-item');
     });
 
     it('calls with argument from an index file.', async () => {
