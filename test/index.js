@@ -1211,4 +1211,28 @@ describe('Haute', () => {
             { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
         ]);
     });
+
+    it('can include typescript files in directories using default exports.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'module-files',
+            list: true
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+        expect(calledWith).to.equal([
+            { arg: { file: 'commonjs', default: 'value' }, length: 1 },
+            { arg: { file: 'typescript' }, length: 1 }
+        ]);
+    });
 });
