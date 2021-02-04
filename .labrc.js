@@ -4,5 +4,5 @@ module.exports = {
     lint: true,
     assert: '@hapi/code',
     paths: ['test/index.js'],
-    globals: 'FinalizationRegistry,WeakRef'
+    globals: 'FinalizationRegistry,WeakRef,AbortController,AbortSignal,EventTarget,Event,MessageChannel,MessagePort,MessageEvent,AggregateError'
 };
