@@ -1212,6 +1212,29 @@ describe('Haute', () => {
         ]);
     });
 
+    it('can include typescript files using default exports.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'validator-ts',
+            list: true
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+        expect(calledWith).to.equal([
+            { arg: { file: 'typescript-validator' }, length: 1 }
+        ]);
+    });
+
     it('can include typescript files in directories using default exports.', async () => {
 
         const calledWith = [];
