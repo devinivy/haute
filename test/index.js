@@ -1211,4 +1211,167 @@ describe('Haute', () => {
             { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
         ]);
     });
+
+    it('can include files with any extension.', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            }
+        };
+
+        // Emulate node-ts
+        require.extensions['.ts'] = require.extensions['.js'];
+        flags.onCleanup = () => delete require.extensions['.ts'];
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            extensions: [...Haute.defaults.extensions, 'ts'],
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(Path.join(closetDir, 'extensions'), 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.ts'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.ts'
+                },
+                length: 1,
+                method: 'c'
+            }
+        ]);
+    });
+
+    it('calls with a list of arguments from multiple directory files.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const preProcess = (args, file, { place }) => ({
+            pre: {
+                args,
+                file,
+                place
+            }
+        });
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'file',
+            preProcess
+        }, {
+            method: 'callThis',
+            place: 'list-as-file',
+            list: true,
+            preProcess
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            {
+                arg: {
+                    pre: {
+                        args: {
+                            file: 'value'
+                        },
+                        file: 'file.js',
+                        place: 'file'
+                    }
+                },
+                length: 1
+            },
+            {
+                arg: {
+                    pre: {
+                        args: {
+                            listOne: 'valueOne'
+                        },
+                        file: 'list-as-file.js',
+                        place: 'list-as-file'
+                    }
+                },
+                length: 1
+            },
+            {
+                arg: {
+                    pre: {
+                        args: {
+                            listTwo: 'valueTwo'
+                        },
+                        file: 'list-as-file.js',
+                        place: 'list-as-file'
+                    }
+                },
+                length: 1
+            }
+        ]);
+    });
 });
