@@ -1264,7 +1264,7 @@ describe('Haute', () => {
             list: true
         }];
 
-        await using(Path.join(closetDir, 'extensions'), 'instance', manifest)(instance, {});
+        await using(Path.join(closetDir, 'ts'), 'instance', manifest)(instance, {});
 
         expect(calledWith).to.equal([
             {
