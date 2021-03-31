@@ -1,5 +1,5 @@
 'use strict';
 
-module.exports = {
+exports.default = {
     c: 'item-two'
 };

@@ -1212,7 +1212,7 @@ describe('Haute', () => {
         ]);
     });
 
-    it('can include files with any extension.', async (flags) => {
+    it('includes typescript files (e.g. via ts-node).', async (flags) => {
 
         const calledWith = [];
 
@@ -1228,6 +1228,10 @@ describe('Haute', () => {
             c: function (arg) {
 
                 calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
             }
         };
 
@@ -1247,13 +1251,17 @@ describe('Haute', () => {
             method: 'c',
             place: 'place-c',
             list: true,
-            extensions: [...Haute.defaults.extensions, 'ts'],
             useFilename: (value, filename, path) => {
 
                 value.filename = filename;
                 value.path = path;
                 return value;
             }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
         }];
 
         await using(Path.join(closetDir, 'extensions'), 'instance', manifest)(instance, {});
@@ -1299,79 +1307,41 @@ describe('Haute', () => {
                 },
                 length: 1,
                 method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
             }
         ]);
     });
 
-    it('calls with a list of arguments from multiple directory files.', async () => {
+    describe('normalizeExports()', () => {
 
-        const calledWith = [];
+        it('handles falsey values.', () => {
 
-        const instance = {
-            callThis: function (arg) {
+            expect(Haute.normalizeExports(0, 'x.ts')).to.equal(0);
+            expect(Haute.normalizeExports('', 'x.ts')).to.equal('');
+            expect(Haute.normalizeExports(null, 'x.ts')).to.equal(null);
 
-                calledWith.push({ arg, length: arguments.length });
-            }
-        };
-
-        const preProcess = (args, file, { place }) => ({
-            pre: {
-                args,
-                file,
-                place
-            }
+            expect(Haute.normalizeExports(0, 'x.js')).to.equal(0);
+            expect(Haute.normalizeExports('', 'x.js')).to.equal('');
+            expect(Haute.normalizeExports(null, 'x.js')).to.equal(null);
         });
 
-        const manifest = [{
-            method: 'callThis',
-            place: 'file',
-            preProcess
-        }, {
-            method: 'callThis',
-            place: 'list-as-file',
-            list: true,
-            preProcess
-        }];
+        it('handles non-object values.', () => {
 
-        await using(closetDir, 'instance', manifest)(instance, {});
-
-        expect(calledWith).to.equal([
-            {
-                arg: {
-                    pre: {
-                        args: {
-                            file: 'value'
-                        },
-                        file: 'file.js',
-                        place: 'file'
-                    }
-                },
-                length: 1
-            },
-            {
-                arg: {
-                    pre: {
-                        args: {
-                            listOne: 'valueOne'
-                        },
-                        file: 'list-as-file.js',
-                        place: 'list-as-file'
-                    }
-                },
-                length: 1
-            },
-            {
-                arg: {
-                    pre: {
-                        args: {
-                            listTwo: 'valueTwo'
-                        },
-                        file: 'list-as-file.js',
-                        place: 'list-as-file'
-                    }
-                },
-                length: 1
-            }
-        ]);
+            expect(Haute.normalizeExports('xyz', 'x.ts')).to.equal('xyz');
+            expect(Haute.normalizeExports('xyz', 'x.js')).to.equal('xyz');
+        });
     });
 });
