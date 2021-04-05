@@ -1235,7 +1235,7 @@ describe('Haute', () => {
             }
         };
 
-        // Emulate node-ts
+        // Emulate ts-node
         require.extensions['.ts'] = require.extensions['.js'];
         flags.onCleanup = () => delete require.extensions['.ts'];
 
@@ -1325,23 +1325,23 @@ describe('Haute', () => {
         ]);
     });
 
-    describe('normalizeExports()', () => {
+    describe('getDefaultExport()', () => {
 
         it('handles falsey values.', () => {
 
-            expect(Haute.normalizeExports(0, 'x.ts')).to.equal(0);
-            expect(Haute.normalizeExports('', 'x.ts')).to.equal('');
-            expect(Haute.normalizeExports(null, 'x.ts')).to.equal(null);
+            expect(Haute.getDefaultExport(0, 'x.ts')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.ts')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.ts')).to.equal(null);
 
-            expect(Haute.normalizeExports(0, 'x.js')).to.equal(0);
-            expect(Haute.normalizeExports('', 'x.js')).to.equal('');
-            expect(Haute.normalizeExports(null, 'x.js')).to.equal(null);
+            expect(Haute.getDefaultExport(0, 'x.js')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.js')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.js')).to.equal(null);
         });
 
         it('handles non-object values.', () => {
 
-            expect(Haute.normalizeExports('xyz', 'x.ts')).to.equal('xyz');
-            expect(Haute.normalizeExports('xyz', 'x.js')).to.equal('xyz');
+            expect(Haute.getDefaultExport('xyz', 'x.ts')).to.equal('xyz');
+            expect(Haute.getDefaultExport('xyz', 'x.js')).to.equal('xyz');
         });
     });
 });
