@@ -10,7 +10,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "lab -a @hapi/code  -t 100 -L test/index.js -I 'AbortController,AbortSignal,EventTarget,Event,MessageChannel,MessagePort,MessageEvent,AggregateError,FinalizationRegistry,WeakRef'",
+    "test": "lab -a @hapi/code -t 100 -L test/index.js -I 'AbortController,AbortSignal,EventTarget,Event,MessageChannel,MessagePort,MessageEvent,AggregateError,FinalizationRegistry,WeakRef'",
     "coveralls": "lab -r lcov test/index.js | coveralls"
   },
   "repository": {
