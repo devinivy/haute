@@ -1211,4 +1211,137 @@ describe('Haute', () => {
             { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
         ]);
     });
+
+    it('includes typescript files (e.g. via ts-node).', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
+            }
+        };
+
+        // Emulate ts-node
+        require.extensions['.ts'] = require.extensions['.js'];
+        flags.onCleanup = () => delete require.extensions['.ts'];
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
+        }];
+
+        await using(Path.join(closetDir, 'ts'), 'instance', manifest)(instance, {});
+
+        expect(calledWith).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.ts'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.ts'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
+            }
+        ]);
+    });
+
+    describe('getDefaultExport()', () => {
+
+        it('handles falsey values.', () => {
+
+            expect(Haute.getDefaultExport(0, 'x.ts')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.ts')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.ts')).to.equal(null);
+
+            expect(Haute.getDefaultExport(0, 'x.js')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.js')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.js')).to.equal(null);
+        });
+
+        it('handles non-object values.', () => {
+
+            expect(Haute.getDefaultExport('xyz', 'x.ts')).to.equal('xyz');
+            expect(Haute.getDefaultExport('xyz', 'x.js')).to.equal('xyz');
+        });
+    });
 });
