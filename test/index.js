@@ -50,7 +50,7 @@ describe('Haute', () => {
 
     const byExcludePath = (a, b) => byPath(a[1], b[1]);
 
-    const byArgPath = (a, b) => byPath(a.arg.path, b.arg.path);
+    const byArgPath = (a, b) => byPath(a.arg.path || '', b.arg.path || '');
 
     const using = (dirname, instanceName, manifest) => {
 
@@ -1245,6 +1245,123 @@ describe('Haute', () => {
         ]);
     });
 
+    it('includes ES modules.', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
+        }];
+
+        await using(Path.join(closetDir, 'mjs'), 'instance', manifest)(instance, {});
+        const maybeByPath = (a, b) => {
+
+            if (!a.arg.path || !b.arg.path) {
+                return 0;
+            }
+
+            return a.arg.path < b.arg.path ? -1 : 1;
+        };
+
+        expect(calledWith.sort(maybeByPath)).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.mjs'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.mjs'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
+            }
+        ]);
+    });
+
     it('includes typescript files (e.g. via ts-node).', async (flags) => {
 
         const calledWith = [];
@@ -1366,6 +1483,10 @@ describe('Haute', () => {
             expect(Haute.getDefaultExport('', 'x.ts')).to.equal('');
             expect(Haute.getDefaultExport(null, 'x.ts')).to.equal(null);
 
+            expect(Haute.getDefaultExport(0, 'x.mjs')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.mjs')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.mjs')).to.equal(null);
+
             expect(Haute.getDefaultExport(0, 'x.js')).to.equal(0);
             expect(Haute.getDefaultExport('', 'x.js')).to.equal('');
             expect(Haute.getDefaultExport(null, 'x.js')).to.equal(null);
@@ -1374,7 +1495,15 @@ describe('Haute', () => {
         it('handles non-object values.', () => {
 
             expect(Haute.getDefaultExport('xyz', 'x.ts')).to.equal('xyz');
+            expect(Haute.getDefaultExport('xyz', 'x.mjs')).to.equal('xyz');
             expect(Haute.getDefaultExport('xyz', 'x.js')).to.equal('xyz');
+        });
+
+        it('handles missing default.', () => {
+
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.ts')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.mjs')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.js')).to.equal({ a: 'b' });
         });
     });
 });
