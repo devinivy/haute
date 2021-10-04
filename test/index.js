@@ -19,11 +19,44 @@ const internals = {};
 describe('Haute', () => {
 
     const closetDir = `${__dirname}/closet`;
+
+    const byPath = (pathA, pathB) => {
+
+        const a = pathA.split(Path.sep);
+        const b = pathB.split(Path.sep);
+        const len = Math.max(a.length, b.length);
+
+        for (let i = 0; i < len; ++i) {
+            if (!(i in a)) {
+                return -1;
+            }
+            else if (!(i in b)) {
+                return 1;
+            }
+            else if (a[i] > b[i]) {
+                return 1;
+            }
+            else if (a[i] < b[i]) {
+                return -1;
+            }
+            else if (a.length < b.length) {
+                return -1;
+            }
+            else if (a.length > b.length) {
+                return 1;
+            }
+        }
+    };
+
+    const byExcludePath = (a, b) => byPath(a[1], b[1]);
+
+    const byArgPath = (a, b) => byPath(a.arg.path, b.arg.path);
+
     const using = (dirname, instanceName, manifest) => {
 
         return async (...args) => {
 
-            const calls = Haute.calls(instanceName, manifest.map((item) => ({ ...item, dirname })));
+            const calls = await Haute.calls(instanceName, manifest.map((item) => ({ ...item, dirname })));
             await Haute.run(calls, ...args);
         };
     };
@@ -969,13 +1002,13 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
         ]);
     });
 
@@ -1005,13 +1038,13 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
         ]);
     });
 
@@ -1079,16 +1112,16 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(excludeArgs).to.equal([
+        expect(excludeArgs.sort(byExcludePath)).to.equal([
             ['item', 'item.js'],
             ['item-one', 'one/a/item-one.js'],
             ['item-two', 'one/a/item-two.js'],
             ['item-one', 'one/b/item-one.js'],
-            ['item-one', 'two/a/item-one.js'],
-            ['item-one', 'two/item-one.js']
+            ['item-one', 'two/item-one.js'],
+            ['item-one', 'two/a/item-one.js']
         ]);
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
@@ -1161,16 +1194,16 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(excludeArgs).to.equal([
+        expect(excludeArgs.sort(byExcludePath)).to.equal([
             ['item', 'item.js'],
             ['item-one', 'one/a/item-one.js'],
             ['item-two', 'one/a/item-two.js'],
             ['item-one', 'one/b/item-one.js'],
-            ['item-one', 'two/a/item-one.js'],
-            ['item-one', 'two/item-one.js']
+            ['item-one', 'two/item-one.js'],
+            ['item-one', 'two/a/item-one.js']
         ]);
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
@@ -1204,11 +1237,11 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
         ]);
     });
 
