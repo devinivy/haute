@@ -1245,6 +1245,79 @@ describe('Haute', () => {
         ]);
     });
 
+    it('does not stop at indexes by default.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'stop-at-indexes',
+            list: true,
+            recursive: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith.sort(byArgPath)).to.equal([
+            { arg: { filename: 'a', path: 'a.js' }, length: 1 },
+            { arg: { filename: 'b', path: 'b.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'c/e.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'c/index.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'd/e.js' }, length: 1 },
+            { arg: { filename: 'g', path: 'd/f/g.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'd/f/index.js' }, length: 1 }
+        ]);
+    });
+
+    it('stops at indexes when stopAtIndexes option is set.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'stop-at-indexes',
+            list: true,
+            recursive: true,
+            stopAtIndexes: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith.sort(byArgPath)).to.equal([
+            { arg: { filename: 'a', path: 'a.js' }, length: 1 },
+            { arg: { filename: 'b', path: 'b.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'c/index.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'd/e.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'd/f/index.js' }, length: 1 }
+        ]);
+    });
+
     it('includes ES modules.', async (flags) => {
 
         const calledWith = [];
