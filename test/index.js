@@ -11,7 +11,7 @@ const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 
 // Test shortcuts
 
-const { describe, it } = exports.lab = Lab.script();
+const { describe, it, before } = exports.lab = Lab.script();
 const { expect } = Code;
 
 const internals = {};
@@ -60,6 +60,22 @@ describe('Haute', () => {
             await Haute.run(calls, ...args);
         };
     };
+
+    before(() => {
+
+        const origExt = require.extensions['.js'];
+        require.extensions['.js'] = (mod, filename) => {
+
+            if (filename.includes('type-is-module')) {
+                // This directory contains .js files which are ESM,
+                // which is incompatible with lab's instrumentation.
+                // See also .labrc.js.
+                return require.extensions['.js.stashed'](mod, filename);
+            }
+
+            return origExt(mod, filename);
+        };
+    });
 
     it('throws when provided a bad directory path.', async () => {
 
@@ -1435,6 +1451,123 @@ describe('Haute', () => {
         ]);
     });
 
+    it('includes ES modules (type=module).', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
+        }];
+
+        await using(Path.join(closetDir, 'type-is-module'), 'instance', manifest)(instance, {});
+        const maybeByPath = (a, b) => {
+
+            if (!a.arg.path || !b.arg.path) {
+                return 0;
+            }
+
+            return a.arg.path < b.arg.path ? -1 : 1;
+        };
+
+        expect(calledWith.sort(maybeByPath)).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.json'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
+            }
+        ]);
+    });
+
     it('includes typescript files (e.g. via ts-node).', async (flags) => {
 
         const calledWith = [];
@@ -1577,6 +1710,12 @@ describe('Haute', () => {
             expect(Haute.getDefaultExport({ a: 'b' }, 'x.ts')).to.equal({ a: 'b' });
             expect(Haute.getDefaultExport({ a: 'b' }, 'x.mjs')).to.equal({ a: 'b' });
             expect(Haute.getDefaultExport({ a: 'b' }, 'x.js')).to.equal({ a: 'b' });
+        });
+
+        it('handles present default without type.', () => {
+
+            expect(Haute.getDefaultExport({ default: { a: 'b' } }, 'x.ts')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ default: { a: 'b' } }, 'x.mjs')).to.equal({ a: 'b' });
         });
     });
 });
