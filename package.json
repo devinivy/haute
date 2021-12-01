@@ -4,13 +4,13 @@
   "description": "directory structure as code",
   "main": "lib/index.js",
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   },
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "lab -a @hapi/code -t 100 -L test/index.js -I 'AbortController,AbortSignal,EventTarget,Event,MessageChannel,MessagePort,MessageEvent,AggregateError,FinalizationRegistry,WeakRef'",
+    "test": "lab -a @hapi/code -t 100 -L test/index.js",
     "coveralls": "lab -r lcov test/index.js | coveralls"
   },
   "repository": {
@@ -30,12 +30,18 @@
   },
   "homepage": "https://github.com/devinivy/haute#readme",
   "dependencies": {
-    "@hapi/hoek": "8.x.x",
-    "require-directory": "2.x.x"
+    "@hapi/hoek": "9.x.x",
+    "mo-walk": ">=1.1.0 <2"
   },
   "devDependencies": {
-    "@hapi/code": "6.x.x",
-    "@hapi/lab": "20.x.x",
+    "@hapi/code": "8.x.x",
+    "@hapi/eslint-plugin": "*",
+    "@hapi/lab": "24.x.x",
     "coveralls": "3.x.x"
+  },
+  "eslintConfig": {
+    "extends": [
+      "plugin:@hapi/module"
+    ]
   }
 }

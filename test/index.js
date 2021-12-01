@@ -11,7 +11,7 @@ const ClassAsDirItem = require('./closet/list-as-dir-files/class-item');
 
 // Test shortcuts
 
-const { describe, it } = exports.lab = Lab.script();
+const { describe, it, before } = exports.lab = Lab.script();
 const { expect } = Code;
 
 const internals = {};
@@ -19,14 +19,63 @@ const internals = {};
 describe('Haute', () => {
 
     const closetDir = `${__dirname}/closet`;
+
+    const byPath = (pathA, pathB) => {
+
+        const a = pathA.split(Path.sep);
+        const b = pathB.split(Path.sep);
+        const len = Math.max(a.length, b.length);
+
+        for (let i = 0; i < len; ++i) {
+            if (!(i in a)) {
+                return -1;
+            }
+            else if (!(i in b)) {
+                return 1;
+            }
+            else if (a[i] > b[i]) {
+                return 1;
+            }
+            else if (a[i] < b[i]) {
+                return -1;
+            }
+            else if (a.length < b.length) {
+                return -1;
+            }
+            else if (a.length > b.length) {
+                return 1;
+            }
+        }
+    };
+
+    const byExcludePath = (a, b) => byPath(a[1], b[1]);
+
+    const byArgPath = (a, b) => byPath(a.arg.path || '', b.arg.path || '');
+
     const using = (dirname, instanceName, manifest) => {
 
         return async (...args) => {
 
-            const calls = Haute.calls(instanceName, manifest.map((item) => ({ ...item, dirname })));
+            const calls = await Haute.calls(instanceName, manifest.map((item) => ({ ...item, dirname })));
             await Haute.run(calls, ...args);
         };
     };
+
+    before(() => {
+
+        const origExt = require.extensions['.js'];
+        require.extensions['.js'] = (mod, filename) => {
+
+            if (filename.includes('type-is-module')) {
+                // This directory contains .js files which are ESM,
+                // which is incompatible with lab's instrumentation.
+                // See also .labrc.js.
+                return require.extensions['.js.stashed'](mod, filename);
+            }
+
+            return origExt(mod, filename);
+        };
+    });
 
     it('throws when provided a bad directory path.', async () => {
 
@@ -969,13 +1018,13 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
         ]);
     });
 
@@ -1005,13 +1054,13 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
         ]);
     });
 
@@ -1079,16 +1128,16 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(excludeArgs).to.equal([
+        expect(excludeArgs.sort(byExcludePath)).to.equal([
             ['item', 'item.js'],
             ['item-one', 'one/a/item-one.js'],
             ['item-two', 'one/a/item-two.js'],
             ['item-one', 'one/b/item-one.js'],
-            ['item-one', 'two/a/item-one.js'],
-            ['item-one', 'two/item-one.js']
+            ['item-one', 'two/item-one.js'],
+            ['item-one', 'two/a/item-one.js']
         ]);
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item', path: 'item.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
@@ -1161,16 +1210,16 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(excludeArgs).to.equal([
+        expect(excludeArgs.sort(byExcludePath)).to.equal([
             ['item', 'item.js'],
             ['item-one', 'one/a/item-one.js'],
             ['item-two', 'one/a/item-two.js'],
             ['item-one', 'one/b/item-one.js'],
-            ['item-one', 'two/a/item-one.js'],
-            ['item-one', 'two/item-one.js']
+            ['item-one', 'two/item-one.js'],
+            ['item-one', 'two/a/item-one.js']
         ]);
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-two', path: 'one/a/item-two.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
@@ -1204,11 +1253,318 @@ describe('Haute', () => {
 
         await using(closetDir, 'instance', manifest)(instance, {});
 
-        expect(calledWith).to.equal([
+        expect(calledWith.sort(byArgPath)).to.equal([
             { arg: { filename: 'item-one', path: 'one/a/item-one.js' }, length: 1 },
             { arg: { filename: 'item-one', path: 'one/b/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 },
-            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 }
+            { arg: { filename: 'item-one', path: 'two/item-one.js' }, length: 1 },
+            { arg: { filename: 'item-one', path: 'two/a/item-one.js' }, length: 1 }
+        ]);
+    });
+
+    it('does not stop at indexes by default.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'stop-at-indexes',
+            list: true,
+            recursive: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith.sort(byArgPath)).to.equal([
+            { arg: { filename: 'a', path: 'a.js' }, length: 1 },
+            { arg: { filename: 'b', path: 'b.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'c/e.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'c/index.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'd/e.js' }, length: 1 },
+            { arg: { filename: 'g', path: 'd/f/g.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'd/f/index.js' }, length: 1 }
+        ]);
+    });
+
+    it('stops at indexes when stopAtIndexes option is set.', async () => {
+
+        const calledWith = [];
+
+        const instance = {
+            callThis: function (arg) {
+
+                calledWith.push({ arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'callThis',
+            place: 'stop-at-indexes',
+            list: true,
+            recursive: true,
+            stopAtIndexes: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        }];
+
+        await using(closetDir, 'instance', manifest)(instance, {});
+
+        expect(calledWith.sort(byArgPath)).to.equal([
+            { arg: { filename: 'a', path: 'a.js' }, length: 1 },
+            { arg: { filename: 'b', path: 'b.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'c/index.js' }, length: 1 },
+            { arg: { filename: 'e', path: 'd/e.js' }, length: 1 },
+            { arg: { filename: 'index', path: 'd/f/index.js' }, length: 1 }
+        ]);
+    });
+
+    it('includes ES modules.', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
+        }];
+
+        await using(Path.join(closetDir, 'mjs'), 'instance', manifest)(instance, {});
+        const maybeByPath = (a, b) => {
+
+            if (!a.arg.path || !b.arg.path) {
+                return 0;
+            }
+
+            return a.arg.path < b.arg.path ? -1 : 1;
+        };
+
+        expect(calledWith.sort(maybeByPath)).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.mjs'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.mjs'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
+            }
+        ]);
+    });
+
+    it('includes ES modules (type=module).', async (flags) => {
+
+        const calledWith = [];
+
+        const instance = {
+            a: function (arg) {
+
+                calledWith.push({ method: 'a', arg, length: arguments.length });
+            },
+            b: function (arg) {
+
+                calledWith.push({ method: 'b', arg, length: arguments.length });
+            },
+            c: function (arg) {
+
+                calledWith.push({ method: 'c', arg, length: arguments.length });
+            },
+            d: function (arg) {
+
+                calledWith.push({ method: 'd', arg, length: arguments.length });
+            }
+        };
+
+        const manifest = [{
+            method: 'a',
+            place: 'place-a'
+        },
+        {
+            method: 'b',
+            place: 'place-b'
+        },
+        {
+            method: 'c',
+            place: 'place-c',
+            list: true,
+            useFilename: (value, filename, path) => {
+
+                value.filename = filename;
+                value.path = path;
+                return value;
+            }
+        },
+        {
+            method: 'd',
+            place: 'place-d',
+            list: true
+        }];
+
+        await using(Path.join(closetDir, 'type-is-module'), 'instance', manifest)(instance, {});
+        const maybeByPath = (a, b) => {
+
+            if (!a.arg.path || !b.arg.path) {
+                return 0;
+            }
+
+            return a.arg.path < b.arg.path ? -1 : 1;
+        };
+
+        expect(calledWith.sort(maybeByPath)).to.equal([
+            {
+                arg: {
+                    a: 'value'
+                },
+                length: 1,
+                method: 'a'
+            },
+            {
+                arg: {
+                    b: 'value'
+                },
+                length: 1,
+                method: 'b'
+            },
+            {
+                arg: {
+                    c: 'item-one',
+                    filename: 'item-one',
+                    path: 'item-one.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-three',
+                    filename: 'item-three',
+                    path: 'item-three.json'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    c: 'item-two',
+                    filename: 'item-two',
+                    path: 'item-two.js'
+                },
+                length: 1,
+                method: 'c'
+            },
+            {
+                arg: {
+                    d: 'item-one'
+                },
+                length: 1,
+                method: 'd'
+            },
+            {
+                arg: {
+                    d: 'item-two'
+                },
+                length: 1,
+                method: 'd'
+            }
         ]);
     });
 
@@ -1333,6 +1689,10 @@ describe('Haute', () => {
             expect(Haute.getDefaultExport('', 'x.ts')).to.equal('');
             expect(Haute.getDefaultExport(null, 'x.ts')).to.equal(null);
 
+            expect(Haute.getDefaultExport(0, 'x.mjs')).to.equal(0);
+            expect(Haute.getDefaultExport('', 'x.mjs')).to.equal('');
+            expect(Haute.getDefaultExport(null, 'x.mjs')).to.equal(null);
+
             expect(Haute.getDefaultExport(0, 'x.js')).to.equal(0);
             expect(Haute.getDefaultExport('', 'x.js')).to.equal('');
             expect(Haute.getDefaultExport(null, 'x.js')).to.equal(null);
@@ -1341,7 +1701,21 @@ describe('Haute', () => {
         it('handles non-object values.', () => {
 
             expect(Haute.getDefaultExport('xyz', 'x.ts')).to.equal('xyz');
+            expect(Haute.getDefaultExport('xyz', 'x.mjs')).to.equal('xyz');
             expect(Haute.getDefaultExport('xyz', 'x.js')).to.equal('xyz');
+        });
+
+        it('handles missing default.', () => {
+
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.ts')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.mjs')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ a: 'b' }, 'x.js')).to.equal({ a: 'b' });
+        });
+
+        it('handles present default without type.', () => {
+
+            expect(Haute.getDefaultExport({ default: { a: 'b' } }, 'x.ts')).to.equal({ a: 'b' });
+            expect(Haute.getDefaultExport({ default: { a: 'b' } }, 'x.mjs')).to.equal({ a: 'b' });
         });
     });
 });
